@@ -70,12 +70,10 @@ export function AptDetail({ apt, lawdCd, onClose }: Props) {
   if (!apt) return null;
 
   return (
-    <div className="absolute right-0 top-0 z-20 flex h-full w-[400px] flex-col border-l border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
-      <header className="flex items-start justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+    <div className="absolute right-0 top-0 z-20 flex h-full w-[400px] flex-col border-l border-slate-200 bg-white shadow-xl">
+      <header className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
         <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-slate-900 dark:text-slate-50">
-            {apt.aptNm}
-          </h2>
+          <h2 className="truncate text-base font-semibold text-slate-900">{apt.aptNm}</h2>
           <p className="mt-0.5 truncate text-xs text-slate-500">{apt.fullAddress}</p>
           <p className="mt-1 text-[11px] text-slate-400">
             {formatArea(apt.area)} {apt.buildYear ? `· ${apt.buildYear}년 준공` : ""}
@@ -84,14 +82,14 @@ export function AptDetail({ apt, lawdCd, onClose }: Props) {
         <button
           type="button"
           onClick={onClose}
-          className="-mr-1 -mt-1 rounded p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="-mr-1 -mt-1 rounded p-1 text-slate-500 hover:bg-slate-100"
           aria-label="close"
         >
           <LuX className="size-4" />
         </button>
       </header>
 
-      <div className="grid grid-cols-3 gap-3 border-b border-slate-200 px-5 py-4 text-center dark:border-slate-800">
+      <div className="grid grid-cols-3 gap-3 border-b border-slate-200 px-5 py-4 text-center">
         <Stat label="평균 매매가" value={formatManwon(apt.avgPrice)} highlight />
         <Stat label="최고" value={formatManwon(apt.maxPrice)} />
         <Stat label="최저" value={formatManwon(apt.minPrice)} />
@@ -99,13 +97,11 @@ export function AptDetail({ apt, lawdCd, onClose }: Props) {
 
       <div className="px-5 py-4">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            매매 / 전세 추이 (최근 12개월)
-          </h3>
+          <h3 className="text-sm font-semibold text-slate-700">매매 / 전세 추이 (최근 12개월)</h3>
           <span className="text-[11px] text-slate-400">단위: 만원</span>
         </div>
         {errorMsg ? (
-          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-4 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-200">
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-4 text-xs text-red-700">
             시계열을 불러오지 못했습니다: {errorMsg}
           </div>
         ) : (
@@ -125,9 +121,7 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
     <div>
       <div className="text-[11px] text-slate-400">{label}</div>
       <div
-        className={`mt-1 text-sm font-semibold ${
-          highlight ? "text-rose-500" : "text-slate-800 dark:text-slate-100"
-        }`}
+        className={`mt-1 text-sm font-semibold ${highlight ? "text-rose-500" : "text-slate-800"}`}
       >
         {value}
       </div>

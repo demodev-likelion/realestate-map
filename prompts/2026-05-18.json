@@ -1,0 +1,57 @@
+[
+  {
+    "time": "01:49:02",
+    "user": "seungwonan",
+    "prompt": "24f33e5e6b2ddd6c40998137fdc8d829\n\nNEXT_PUBLIC_KAKAO_JS_KEY 가 설정되지 않았습니다."
+  },
+  {
+    "time": "01:51:19",
+    "user": "seungwonan",
+    "prompt": "MOLIT_SERVICE_KEY 이거 어디서 받아\n\nJS 키 다시 줄게\ne21f2f00e9cbfd81d3d60e36209a580b\n\n\n카카오 로그인\n코드 재발급\n코드 삭제\n코드\nslSwk9yRNK6Oyf3xNJ03dH3ZtgiZfct8\n\n활성화\n\n\n비즈니스 인증\n코드 재발급\n코드 삭제\n코드\nx7SH99ngslklALP6PMNmkaq2YVWCG4PB\n\n활성화"
+  },
+  {
+    "time": "01:55:13",
+    "user": "seungwonan",
+    "prompt": "a4001a7ed1bc8396499a4eae265ca855\n\nREST\n\n이터명    국토교통부_아파트 전월세 실거래가 자료 상세설명\n서비스유형    REST    심의여부    \n자동승인\n신청유형    개발계정 | 활용신청    처리상태    승인\n활용기간    2026-03-17 ~ 2028-03-17\n서비스정보\n\n참고문서    아파트 전월세 실거래가 자료 기술문서.hwp\n데이터포맷    XML\nEnd Point    https://apis.data.go.kr/1613000/RTMSDataSvcAptRent\nAPI 환경 또는 API 호출 조건에 따라 인증키가 적용되는 방식이 다를 수 있습니다.\n포털에서 제공되는 Encoding/Decoding 된 인증키를 적용하면서 구동되는 키를 사용하시기 바랍니다.\n* 향후 포털에서 더 명확한 정보를 제공하기 위해 노력하겠습니다.\n일반 인증키\n(Encoding)    \n4EFi%2FnlEVkArkhPXll5KOG2uHuK8kkTXKZ5L0EdOO%2FFBDGd7TVOykJ4Jb5JMuPrv7rE%2Fygs%2Fro5YKwAdFKiU6A%3D%3D\n일반 인증키\n(Decoding)    \n4EFi/nlEVkArkhPXll5KOG2uHuK8kkTXKZ5L0EdOO/FBDGd7TVOykJ4Jb5JMuPrv7rE/ygs/ro5YKwAdFKiU6A==\n활용신청 상세기능정보\n\nNO    상세기능    설명    일일 트래픽    미리보기\n1    아파트 전월세 실거래가 공개 자료\n/getRTMSDataSvcAptRent    부동산 거래신고에 관한 법률에 따라 신고된 거래의 실거래 자료를 제공    10000    확인\n활용정보\n\n활용목적    앱개발 (모바일,솔루션등)\n활용내용    GPTs\n라이센스표시\n\n이용허락범위    \n이용허락범위 제한 없음 \n기본정보\n\n데이터명    국토교통부_아파트 매매 실거래가 자료 상세설명\n서비스유형    REST    심의여부    \n자동승인\n신청유형    개발계정 | 활용신청    처리상태    승인\n활용기간    2026-05-18 ~ 2028-05-18\n서비스정보\n\n참고문서    아파트 매매 실거래가 자료 기술문서.hwp\n데이터포맷    XML\nEnd Point    https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade\nAPI 환경 또는 API 호출 조건에 따라 인증키가 적용되는 방식이 다를 수 있습니다.\n포털에서 제공되는 Encoding/Decoding 된 인증키를 적용하면서 구동되는 키를 사용하시기 바랍니다.\n* 향후 포털에서 더 명확한 정보를 제공하기 위해 노력하겠습니다.\n일반 인증키\n(Encoding)    \n4EFi%2FnlEVkArkhPXll5KOG2uHuK8kkTXKZ5L0EdOO%2FFBDGd7TVOykJ4Jb5JMuPrv7rE%2Fygs%2Fro5YKwAdFKiU6A%3D%3D\n일반 인증키\n(Decoding)    \n4EFi/nlEVkArkhPXll5KOG2uHuK8kkTXKZ5L0EdOO/FBDGd7TVOykJ4Jb5JMuPrv7rE/ygs/ro5YKwAdFKiU6A==\n활용신청 상세기능정보\n\nNO    상세기능    설명    일일 트래픽    미리보기\n1    아파트 매매 실거래가 공개 자료\n/getRTMSDataSvcAptTrade    부동산 거래신고에 관한 법률에 따라 신고된 거래의 실거래 자료를 제공    10000    확인\n활용정보\n\n활용목적    웹 사이트 개발\n활용내용    교육\n라이센스표시\n\n이용허락범위    \n이용허락범위 제한 없음\n이용허락범위 제한 없음"
+  },
+  {
+    "time": "01:56:40",
+    "user": "seungwonan",
+    "prompt": "그렇게 해줘"
+  },
+  {
+    "time": "01:58:28",
+    "user": "seungwonan",
+    "prompt": "일부 월 조회 실패\n· 모든 월의 국토부 API 호출이 실패했습니다.\n\n GET /api/trades?lawdCd=11110&months=3 502 in 282ms (next.js: 227ms, application-code: 56ms)"
+  },
+  {
+    "time": "01:59:39",
+    "user": "seungwonan",
+    "prompt": "3001 번으로 하면 돼"
+  },
+  {
+    "time": "02:02:07",
+    "user": "seungwonan",
+    "prompt": "[Image #5]\n\n테마만 잘 설정해줘"
+  },
+  {
+    "time": "02:11:14",
+    "user": "seungwonan",
+    "prompt": "/stakeholder-doc \n\n지금 구현한 내용을 구현할 수 있도록\nPRD.md 수정해줘"
+  },
+  {
+    "time": "02:12:29",
+    "user": "seungwonan",
+    "prompt": "demodev-likelion 프리픽스 붙게 배포해줘 vercel로"
+  },
+  {
+    "time": "02:14:51",
+    "user": "seungwonan",
+    "prompt": "커밋 푸시 ㄱㄱ\n깃헙 저장소 만들어줘"
+  },
+  {
+    "time": "02:16:11",
+    "user": "seungwonan",
+    "prompt": "너가 배포 해줘"
+  }
+]

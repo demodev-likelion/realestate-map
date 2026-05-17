@@ -26,11 +26,9 @@ export function Sidebar({ value, onChange, onSubmit, loading, stats, errors }: P
   const sigunguList = useMemo(() => regionMap[value.sido] ?? [], [value.sido]);
 
   return (
-    <aside className="flex h-full w-[320px] shrink-0 flex-col border-r border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900">
+    <aside className="flex h-full w-[320px] shrink-0 flex-col border-r border-slate-200 bg-slate-50 p-5">
       <header className="mb-5">
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-          전국 아파트 실거래가 지도
-        </h1>
+        <h1 className="text-lg font-semibold text-slate-900">전국 아파트 실거래가 지도</h1>
         <p className="mt-1 text-xs text-slate-500">국토교통부 OpenAPI · 카카오맵</p>
       </header>
 
@@ -77,8 +75,8 @@ export function Sidebar({ value, onChange, onSubmit, loading, stats, errors }: P
                 className={cn(
                   "rounded-md border px-2 py-1.5 text-xs font-medium transition",
                   value.months === m
-                    ? "border-amber-400 bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-100"
-                    : "border-slate-300 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700",
+                    ? "border-amber-400 bg-amber-100 text-amber-900"
+                    : "border-slate-300 bg-white text-slate-600 hover:bg-slate-100",
                 )}
               >
                 {m}개월
@@ -109,8 +107,8 @@ export function Sidebar({ value, onChange, onSubmit, loading, stats, errors }: P
 
       <div className="mt-6 space-y-3">
         {stats ? (
-          <div className="rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-            <div className="flex items-center gap-1 font-medium text-slate-900 dark:text-slate-50">
+          <div className="rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-600">
+            <div className="flex items-center gap-1 font-medium text-slate-900">
               <LuMapPin className="size-3.5" />
               {stats.sidoSigungu}
             </div>
@@ -120,7 +118,7 @@ export function Sidebar({ value, onChange, onSubmit, loading, stats, errors }: P
         ) : null}
 
         {errors?.length ? (
-          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-200">
+          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700">
             <div className="font-medium">일부 월 조회 실패</div>
             <ul className="mt-1 space-y-0.5">
               {errors.map((e) => (
@@ -140,7 +138,7 @@ export function Sidebar({ value, onChange, onSubmit, loading, stats, errors }: P
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="block text-xs font-medium text-slate-600 dark:text-slate-300">
+    <div className="block text-xs font-medium text-slate-600">
       <span className="mb-1.5 block">{label}</span>
       {children}
     </div>

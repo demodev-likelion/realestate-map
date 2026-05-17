@@ -12,16 +12,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #f8fafc;
-  }
-}
-
 html,
 body {
   height: 100%;
+}
+
+/* 시스템 다크모드여도 native form 컨트롤이 라이트로 렌더되도록 강제 */
+html {
+  color-scheme: light;
 }
 
 body {
@@ -33,6 +31,5 @@ body {
 
 .form-select {
   @apply w-full rounded-md border border-slate-300 bg-white px-2.5 py-2 text-sm text-slate-800
-    shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200
-    dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:ring-amber-500/30;
+    shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200;
 }

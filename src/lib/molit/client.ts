@@ -2,8 +2,7 @@ import { XMLParser } from "fast-xml-parser";
 import { unstable_cache } from "next/cache";
 import type { RawAptRent, RawAptTrade } from "@/types/molit";
 
-const TRADE_URL =
-  "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev";
+const TRADE_URL = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade";
 const RENT_URL = "https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent";
 
 const PAGE_SIZE = 1000;
@@ -62,7 +61,11 @@ async function callMolitPage<T>(
     numOfRows: String(PAGE_SIZE),
   });
   const url = `${baseUrl}?${params.toString()}`;
-  const res = await fetch(url, { next: { revalidate: 0 } });
+  // 공공데이터포털 WAF가 undici 기본 UA를 차단하므로 브라우저 UA를 명시.
+  const res = await fetch(url, {
+    headers: { "User-Agent": "Mozilla/5.0" },
+    next: { revalidate: 0 },
+  });
   if (!res.ok) {
     throw new Error(`MOLIT HTTP ${res.status} (${dealYmd}, ${lawdCd}, page ${pageNo})`);
   }

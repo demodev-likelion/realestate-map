@@ -18,7 +18,7 @@
 
 ## 외부 API
 
-- 국토교통부_아파트 매매: `https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev`
+- 국토교통부_아파트 매매: `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade`
 - 국토교통부_아파트 전월세: `https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent`
 - 카카오 로컬 REST (주소→좌표): `https://dapi.kakao.com/v2/local/search/address.json`
 - 카카오맵 JS SDK: `https://dapi.kakao.com/v2/maps/sdk.js`
