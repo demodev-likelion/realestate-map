@@ -6,6 +6,9 @@ const TRADE_URL =
   "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev";
 const RENT_URL = "https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent";
 
+const PAGE_SIZE = 1000;
+const MAX_PAGES = 10; // 거래량 안전 상한 (월 1만건 = 강남구 최대 거래량의 ~3배)
+
 const xmlParser = new XMLParser({
   ignoreAttributes: true,
   numberParseOptions: { hex: false, leadingZeros: false },
@@ -45,30 +48,54 @@ function toArray<T>(v: T | T[] | undefined | ""): T[] {
   return Array.isArray(v) ? v : [v];
 }
 
-async function callMolit<T>(baseUrl: string, lawdCd: string, dealYmd: string): Promise<T[]> {
+async function callMolitPage<T>(
+  baseUrl: string,
+  lawdCd: string,
+  dealYmd: string,
+  pageNo: number,
+): Promise<{ items: T[]; totalCount: number }> {
   const params = new URLSearchParams({
     serviceKey: getServiceKey(),
     LAWD_CD: lawdCd,
     DEAL_YMD: dealYmd,
-    pageNo: "1",
-    numOfRows: "1000",
+    pageNo: String(pageNo),
+    numOfRows: String(PAGE_SIZE),
   });
   const url = `${baseUrl}?${params.toString()}`;
   const res = await fetch(url, { next: { revalidate: 0 } });
   if (!res.ok) {
-    throw new Error(`MOLIT HTTP ${res.status} (${dealYmd}, ${lawdCd})`);
+    throw new Error(`MOLIT HTTP ${res.status} (${dealYmd}, ${lawdCd}, page ${pageNo})`);
   }
   const text = await res.text();
   const parsed = xmlParser.parse(text) as MolitResponse<T>;
   const code = parsed.response?.header?.resultCode;
   if (code && code !== "00" && code !== "000") {
     throw new Error(
-      `MOLIT 응답 에러: ${parsed.response?.header?.resultMsg ?? code} (${dealYmd}, ${lawdCd})`,
+      `MOLIT 응답 에러: ${parsed.response?.header?.resultMsg ?? code} (${dealYmd}, ${lawdCd}, page ${pageNo})`,
     );
   }
-  return toArray<T>(
-    parsed.response?.body?.items === "" ? undefined : parsed.response?.body?.items?.item,
+  const rawItems = parsed.response?.body?.items;
+  const items = toArray<T>(rawItems === "" ? undefined : rawItems?.item);
+  const totalCount = Number(parsed.response?.body?.totalCount ?? items.length);
+  return { items, totalCount };
+}
+
+async function callMolitAllPages<T>(
+  baseUrl: string,
+  lawdCd: string,
+  dealYmd: string,
+): Promise<T[]> {
+  const first = await callMolitPage<T>(baseUrl, lawdCd, dealYmd, 1);
+  if (first.totalCount <= PAGE_SIZE) return first.items;
+
+  const totalPages = Math.min(Math.ceil(first.totalCount / PAGE_SIZE), MAX_PAGES);
+  if (totalPages <= 1) return first.items;
+
+  const restPages = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
+  const rest = await Promise.all(
+    restPages.map((p) => callMolitPage<T>(baseUrl, lawdCd, dealYmd, p)),
   );
+  return [...first.items, ...rest.flatMap((r) => r.items)];
 }
 
 type RawTradeXml = {
@@ -118,8 +145,8 @@ function normalizeTrade(raw: RawTradeXml): RawAptTrade | null {
     dealMonth: Number(raw.dealMonth),
     dealDay: Number(raw.dealDay),
     dealAmount: parsePrice(raw.dealAmount),
-    cdealType: raw.cdealType ? String(raw.cdealType) : undefined,
-    cdealDay: raw.cdealDay ? String(raw.cdealDay) : undefined,
+    cdealType: raw.cdealType ? String(raw.cdealType).trim() : undefined,
+    cdealDay: raw.cdealDay ? String(raw.cdealDay).trim() : undefined,
     estateAgentSggNm: raw.estateAgentSggNm ? String(raw.estateAgentSggNm) : undefined,
   };
 }
@@ -145,7 +172,7 @@ function normalizeRent(raw: RawRentXml): RawAptRent | null {
 
 export const fetchTradesByMonth = unstable_cache(
   async (lawdCd: string, dealYmd: string): Promise<RawAptTrade[]> => {
-    const rows = await callMolit<RawTradeXml>(TRADE_URL, lawdCd, dealYmd);
+    const rows = await callMolitAllPages<RawTradeXml>(TRADE_URL, lawdCd, dealYmd);
     return rows.map(normalizeTrade).filter((r): r is RawAptTrade => r !== null);
   },
   ["molit-trade"],
@@ -154,7 +181,7 @@ export const fetchTradesByMonth = unstable_cache(
 
 export const fetchRentsByMonth = unstable_cache(
   async (lawdCd: string, dealYmd: string): Promise<RawAptRent[]> => {
-    const rows = await callMolit<RawRentXml>(RENT_URL, lawdCd, dealYmd);
+    const rows = await callMolitAllPages<RawRentXml>(RENT_URL, lawdCd, dealYmd);
     return rows.map(normalizeRent).filter((r): r is RawAptRent => r !== null);
   },
   ["molit-rent"],
@@ -162,6 +189,7 @@ export const fetchRentsByMonth = unstable_cache(
 );
 
 export function buildYmdRange(months: number, now: Date = new Date()): string[] {
+  if (!Number.isFinite(months) || months <= 0) return [];
   const list: string[] = [];
   for (let i = 0; i < months; i += 1) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);

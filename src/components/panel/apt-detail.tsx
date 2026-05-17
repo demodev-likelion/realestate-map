@@ -12,24 +12,56 @@ type Props = {
   onClose: () => void;
 };
 
+type ApiResponse =
+  | (AptTimeSeries & { partial?: boolean; error?: never })
+  | { error: string; trade?: never; rent?: never };
+
+function isErrorResp(d: ApiResponse): d is { error: string } {
+  return typeof (d as { error?: unknown }).error === "string";
+}
+
 export function AptDetail({ apt, lawdCd, onClose }: Props) {
   const [series, setSeries] = useState<AptTimeSeries | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!apt) {
       setSeries(null);
+      setErrorMsg(null);
       return;
     }
     const controller = new AbortController();
     setLoading(true);
     setSeries(null);
+    setErrorMsg(null);
     const url = `/api/apt-series?lawdCd=${lawdCd}&months=12&key=${encodeURIComponent(apt.key)}`;
     fetch(url, { signal: controller.signal })
-      .then((r) => r.json())
-      .then((data) => setSeries(data as AptTimeSeries))
+      .then(async (r) => ({ status: r.status, json: (await r.json()) as ApiResponse }))
+      .then(({ status, json }) => {
+        if (isErrorResp(json)) {
+          setErrorMsg(json.error);
+          setSeries(null);
+          return;
+        }
+        if (status >= 400) {
+          setErrorMsg(`HTTP ${status}`);
+          setSeries(null);
+          return;
+        }
+        setSeries({
+          key: json.key,
+          aptNm: json.aptNm,
+          area: json.area,
+          trade: Array.isArray(json.trade) ? json.trade : [],
+          rent: Array.isArray(json.rent) ? json.rent : [],
+        });
+      })
       .catch((err: unknown) => {
-        if (err instanceof Error && err.name !== "AbortError") setSeries(null);
+        if (err instanceof Error && err.name !== "AbortError") {
+          setErrorMsg(err.message);
+        }
+        setSeries(null);
       })
       .finally(() => setLoading(false));
     return () => controller.abort();
@@ -72,7 +104,13 @@ export function AptDetail({ apt, lawdCd, onClose }: Props) {
           </h3>
           <span className="text-[11px] text-slate-400">단위: 만원</span>
         </div>
-        <PriceChart data={series} loading={loading} />
+        {errorMsg ? (
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-4 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-200">
+            시계열을 불러오지 못했습니다: {errorMsg}
+          </div>
+        ) : (
+          <PriceChart data={series} loading={loading} />
+        )}
       </div>
 
       <div className="mt-auto px-5 py-3 text-[11px] text-slate-400">

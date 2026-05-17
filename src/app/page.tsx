@@ -11,7 +11,8 @@ type TradesResponse = {
   sidoSigungu: string;
   rawCount: number;
   items: AggregatedApt[];
-  errors?: string[];
+  partial?: boolean;
+  failedMonths?: { ymd: string; reason: string }[];
   error?: string;
 };
 
@@ -42,22 +43,26 @@ export default function Home() {
       const url = `/api/trades?lawdCd=${value.lawdCd}&months=${value.months}`;
       const res = await fetch(url);
       const json = (await res.json()) as TradesResponse;
-      if (json.error) {
-        setErrors([json.error]);
+      if (res.status >= 500 || json.error) {
+        setErrors([json.error ?? `HTTP ${res.status}`]);
         setApts([]);
         setStats(null);
-      } else {
-        setApts(json.items);
-        setStats({
-          rawCount: json.rawCount,
-          aptCount: json.items.length,
-          sidoSigungu: json.sidoSigungu,
-        });
-        if (json.errors) setErrors(json.errors);
+        return;
+      }
+      setApts(json.items);
+      setStats({
+        rawCount: json.rawCount,
+        aptCount: json.items.length,
+        sidoSigungu: json.sidoSigungu,
+      });
+      if (json.failedMonths?.length) {
+        setErrors(json.failedMonths.map((f) => `${f.ymd}: ${f.reason}`));
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "unknown";
       setErrors([msg]);
+      setApts([]);
+      setStats(null);
     } finally {
       setLoading(false);
     }

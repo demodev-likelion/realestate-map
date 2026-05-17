@@ -6,11 +6,15 @@ import type {
   RawAptTrade,
 } from "@/types/molit";
 
-const AREA_BUCKET = 5;
+const AREA_BUCKET = 1;
 
-function aptKey(aptNm: string, jibun: string, area: number): string {
+function aptKey(aptNm: string, umdNm: string, jibun: string, area: number): string {
   const bucket = Math.round(area / AREA_BUCKET) * AREA_BUCKET;
-  return `${aptNm.trim()}|${jibun.trim()}|${bucket}`;
+  return `${aptNm.trim()}|${umdNm.trim()}|${jibun.trim()}|${bucket}`;
+}
+
+export function makeAptKey(aptNm: string, umdNm: string, jibun: string, area: number): string {
+  return aptKey(aptNm, umdNm, jibun, area);
 }
 
 function fmtDate(year: number, month: number, day: number): string {
@@ -23,6 +27,16 @@ function fmtMonth(year: number, month: number): string {
 
 function fullAddressOf(sidoSigungu: string, umdNm: string, jibun: string): string {
   return [sidoSigungu, umdNm, jibun].filter(Boolean).join(" ");
+}
+
+// 국토부 응답에서 해제된 거래는 `cdealType === "O"` (취소). 평균/시계열에서 제외.
+function isActiveTrade(t: RawAptTrade): boolean {
+  return !t.cdealType || t.cdealType.trim() === "";
+}
+
+// 월세 deposit과 전세 deposit이 같은 필드로 오므로 monthlyRent === 0 만 전세로 취급.
+function isJeonseRent(r: RawAptRent): boolean {
+  return (!r.monthlyRent || r.monthlyRent === 0) && r.deposit > 0;
 }
 
 export function aggregateTrades(rawList: RawAptTrade[], sidoSigungu: string): AggregatedApt[] {
@@ -41,7 +55,8 @@ export function aggregateTrades(rawList: RawAptTrade[], sidoSigungu: string): Ag
 
   for (const t of rawList) {
     if (!t.dealAmount || !t.aptNm) continue;
-    const key = aptKey(t.aptNm, t.jibun, t.excluUseAr);
+    if (!isActiveTrade(t)) continue;
+    const key = aptKey(t.aptNm, t.umdNm, t.jibun, t.excluUseAr);
     const dateStr = fmtDate(t.dealYear, t.dealMonth, t.dealDay);
     const cur = map.get(key);
     if (cur) {
@@ -94,7 +109,8 @@ export function buildTimeSeries(
   let area = 0;
 
   for (const t of trades) {
-    const key = aptKey(t.aptNm, t.jibun, t.excluUseAr);
+    if (!isActiveTrade(t)) continue;
+    const key = aptKey(t.aptNm, t.umdNm, t.jibun, t.excluUseAr);
     if (key !== filterKey) continue;
     if (!aptNm) {
       aptNm = t.aptNm;
@@ -106,13 +122,13 @@ export function buildTimeSeries(
     tradeBuckets.set(m, arr);
   }
   for (const r of rents) {
-    const key = aptKey(r.aptNm, r.jibun, r.excluUseAr);
+    if (!isJeonseRent(r)) continue;
+    const key = aptKey(r.aptNm, r.umdNm, r.jibun, r.excluUseAr);
     if (key !== filterKey) continue;
     if (!aptNm) {
       aptNm = r.aptNm;
       area = Math.round(r.excluUseAr * 10) / 10;
     }
-    if (!r.deposit) continue;
     const m = fmtMonth(r.dealYear, r.dealMonth);
     const arr = rentBuckets.get(m) ?? [];
     arr.push(r.deposit);

@@ -23,6 +23,7 @@ declare global {
 }
 
 const JS_KEY = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+const BATCH_SIZE = 200;
 
 export function KakaoMap({ apts, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -30,8 +31,13 @@ export function KakaoMap({ apts, onSelect }: Props) {
   const clustererRef = useRef<Kakao | null>(null);
   const infoWindowRef = useRef<Kakao | null>(null);
   const cacheRef = useRef<GeocodeCache>({});
+  const onSelectRef = useRef(onSelect);
   const [sdkReady, setSdkReady] = useState(false);
   const [progress, setProgress] = useState({ mapped: 0, total: 0 });
+
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+  }, [onSelect]);
 
   const initMap = () => {
     if (!containerRef.current || mapRef.current) return;
@@ -66,72 +72,74 @@ export function KakaoMap({ apts, onSelect }: Props) {
     let cancelled = false;
     const kakao = window.kakao;
     clustererRef.current.clear();
-    const markers: Kakao[] = [];
-    const bounds = new kakao.maps.LatLngBounds();
     setProgress({ mapped: 0, total: apts.length });
 
-    const placeOne = async (apt: AggregatedApt) => {
-      const cacheKey = `${apt.aptNm}|${apt.fullAddress}`;
-      let coord = cacheRef.current[cacheKey];
-      if (coord === undefined) {
+    const run = async () => {
+      // 1) cache 안 된 단지만 batch geocode
+      const unknown = apts.filter(
+        (a) => cacheRef.current[`${a.aptNm}|${a.fullAddress}`] === undefined,
+      );
+      for (let i = 0; i < unknown.length; i += BATCH_SIZE) {
+        if (cancelled) return;
+        const chunk = unknown.slice(i, i + BATCH_SIZE);
         try {
-          const res = await fetch("/api/geocode", {
+          const res = await fetch("/api/geocode/batch", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ aptNm: apt.aptNm, address: apt.fullAddress }),
+            body: JSON.stringify({
+              items: chunk.map((a) => ({ aptNm: a.aptNm, address: a.fullAddress })),
+            }),
           });
-          const json = (await res.json()) as { result: { lat: number; lng: number } | null };
-          coord = json.result ?? null;
-          cacheRef.current[cacheKey] = coord;
+          const json = (await res.json()) as {
+            results?: {
+              aptNm: string;
+              address: string;
+              result: { lat: number; lng: number } | null;
+            }[];
+          };
+          for (const r of json.results ?? []) {
+            cacheRef.current[`${r.aptNm}|${r.address}`] = r.result;
+          }
         } catch {
-          coord = null;
-          cacheRef.current[cacheKey] = null;
+          // 단일 batch 실패는 무시. 다음 batch 진행.
         }
       }
-      if (cancelled || !coord) return;
-      const position = new kakao.maps.LatLng(coord.lat, coord.lng);
-      const marker = new kakao.maps.Marker({ position });
-      kakao.maps.event.addListener(marker, "click", () => {
-        const html = `
-          <div style="padding:10px 12px;min-width:220px;font-size:13px;line-height:1.5;">
-            <div style="font-weight:600;margin-bottom:6px;">${escapeHtml(apt.aptNm)}</div>
-            <div style="color:#555;">${escapeHtml(apt.fullAddress)}</div>
-            <div style="margin-top:6px;">평균 <b>${formatManwon(apt.avgPrice)}</b></div>
-            <div style="color:#777;">최근거래 ${apt.recentDealDate} · ${apt.dealCount}건 · ${formatArea(apt.area)}</div>
-            <button data-key="${apt.key}" style="margin-top:8px;padding:6px 10px;border:none;background:#fee500;border-radius:4px;cursor:pointer;font-weight:600;">상세 보기</button>
-          </div>`;
-        if (!infoWindowRef.current) {
-          infoWindowRef.current = new kakao.maps.InfoWindow({ removable: true });
-        }
-        infoWindowRef.current.setContent(html);
-        infoWindowRef.current.open(mapRef.current, marker);
-        setTimeout(() => {
-          const btn = document.querySelector(`button[data-key="${apt.key}"]`);
-          btn?.addEventListener("click", () => onSelect(apt));
-        }, 0);
-      });
-      markers.push(marker);
-      bounds.extend(position);
-      setProgress((p) => ({ mapped: p.mapped + 1, total: p.total }));
-    };
+      if (cancelled) return;
 
-    const run = async () => {
-      const batchSize = 10;
-      for (let i = 0; i < apts.length; i += batchSize) {
-        if (cancelled) return;
-        const batch = apts.slice(i, i + batchSize);
-        await Promise.all(batch.map(placeOne));
+      // 2) cache 에서 좌표 꺼내 마커 생성
+      const markers: Kakao[] = [];
+      const bounds = new kakao.maps.LatLngBounds();
+      let mapped = 0;
+      for (const apt of apts) {
+        const coord = cacheRef.current[`${apt.aptNm}|${apt.fullAddress}`];
+        if (!coord) continue;
+        const position = new kakao.maps.LatLng(coord.lat, coord.lng);
+        const marker = new kakao.maps.Marker({ position });
+        kakao.maps.event.addListener(marker, "click", () => openInfoWindow(apt, marker));
+        markers.push(marker);
+        bounds.extend(position);
+        mapped += 1;
       }
       if (cancelled) return;
       clustererRef.current.addMarkers(markers);
       if (markers.length > 0) mapRef.current.setBounds(bounds);
+      setProgress({ mapped, total: apts.length });
+    };
+
+    const openInfoWindow = (apt: AggregatedApt, marker: Kakao) => {
+      const root = buildInfoWindowDom(apt, () => onSelectRef.current(apt));
+      if (!infoWindowRef.current) {
+        infoWindowRef.current = new kakao.maps.InfoWindow({ removable: true });
+      }
+      infoWindowRef.current.setContent(root);
+      infoWindowRef.current.open(mapRef.current, marker);
     };
 
     run();
     return () => {
       cancelled = true;
     };
-  }, [apts, onSelect, sdkReady]);
+  }, [apts, sdkReady]);
 
   if (!JS_KEY) {
     return (
@@ -158,19 +166,42 @@ export function KakaoMap({ apts, onSelect }: Props) {
   );
 }
 
-function escapeHtml(s: string): string {
-  return String(s).replace(/[&<>"']/g, (c) => {
-    switch (c) {
-      case "&":
-        return "&amp;";
-      case "<":
-        return "&lt;";
-      case ">":
-        return "&gt;";
-      case '"':
-        return "&quot;";
-      default:
-        return "&#39;";
-    }
-  });
+// innerHTML 대신 DOM API로 빌드 — 외부 API 문자열을 HTML로 해석하지 않음.
+function buildInfoWindowDom(apt: AggregatedApt, onDetailClick: () => void): HTMLElement {
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "padding:10px 12px;min-width:220px;font-size:13px;line-height:1.5;";
+
+  const title = document.createElement("div");
+  title.style.cssText = "font-weight:600;margin-bottom:6px;";
+  title.textContent = apt.aptNm;
+  wrap.appendChild(title);
+
+  const addr = document.createElement("div");
+  addr.style.color = "#555";
+  addr.textContent = apt.fullAddress;
+  wrap.appendChild(addr);
+
+  const avg = document.createElement("div");
+  avg.style.marginTop = "6px";
+  const avgLabel = document.createTextNode("평균 ");
+  const avgVal = document.createElement("b");
+  avgVal.textContent = formatManwon(apt.avgPrice);
+  avg.appendChild(avgLabel);
+  avg.appendChild(avgVal);
+  wrap.appendChild(avg);
+
+  const meta = document.createElement("div");
+  meta.style.color = "#777";
+  meta.textContent = `최근거래 ${apt.recentDealDate} · ${apt.dealCount}건 · ${formatArea(apt.area)}`;
+  wrap.appendChild(meta);
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.textContent = "상세 보기";
+  btn.style.cssText =
+    "margin-top:8px;padding:6px 10px;border:none;background:#fee500;border-radius:4px;cursor:pointer;font-weight:600;color:#3c1e1e;";
+  btn.addEventListener("click", onDetailClick);
+  wrap.appendChild(btn);
+
+  return wrap;
 }
